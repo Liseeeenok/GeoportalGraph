@@ -1,5 +1,5 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
-    publicPath: '/geograph',
+    publicPath: '/GeoportalGraph/',
   transpileDependencies: true
 })
