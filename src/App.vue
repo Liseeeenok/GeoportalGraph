@@ -1,5 +1,7 @@
 <template>
-    <graph-geoportal/>
+    <div class="container mt-4 p-4 text-center border">
+        <graph-geoportal />
+    </div>
 </template>
 
 <script>
@@ -12,9 +14,4 @@ export default {
 </script>
 
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
 </style>
