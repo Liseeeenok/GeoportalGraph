@@ -1,5 +1,5 @@
 <template>
-    <div class="container text-center">
+    <div class="container mt-4 p-4 text-center border">
         <graph-geoportal />
     </div>
 </template>
