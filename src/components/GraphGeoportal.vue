@@ -9,7 +9,7 @@
         <div class="col-lg-4">
             <div class="row row-cols-1 justify-content-center align-items-center">
                 <select class="col-10" @change="redrawGraph()" v-model="selectedTer">
-                    <option disabled value="">Выберите один из вариантов</option>
+                    <option disabled value="" selected="true">Выберите один из вариантов</option>
                     <option v-for="ter in arrTer" :key="ter.id" :value="ter">{{ter.name}}</option>
                 </select>
                 <div class="row col-10 justify-content-between pe-0 ps-0 mt-2 ">
@@ -29,6 +29,9 @@
                         </select>
                     </div>
                 </div>
+                <div v-if="!idEx" class="fs-3 text">
+                    Графика с таким id не существует
+                </div>
             </div>
         </div>
     </div>
@@ -45,8 +48,9 @@ export default {
     },
     data() {
         return {
-            selectedMean: 't',
-            selectedTer: '',
+            idEx: true, //Существует ли id графика
+            selectedMean: 't', //Вертикальная шкала графика
+            selectedTer: '', //Выбранная территория
             arrTer: [], //Массив территорий
             iDisplayLength: 3061, //кол-во запрашиваемых строк
             baseURL: 'http://cris.icc.ru/dataset/list?f=1875&count_rows=true&iDisplayStart=0', //Базовая ссылка (разбить)
@@ -63,33 +67,30 @@ export default {
                     ]
                 },
                 chartOptions: { //Опции графика
-                    responsive: true,
+                    responsive: true, //Адаптивность
                 },
             },
         }
     }, 
     methods: {
-        test(e) {
-            console.log('1 ', this.selectedMean);
-        },
-        redrawGraph() { //Функция для предоставления данных графику
+        redrawGraph() { //Функция для перерисовки графика
             let chartlabel = '';
             const arrData = this.selectedTer.data; //Берём данные выбранной территории
             const chartDataLabel = []; //Массив для времени
-            const chartDataDatasets = []; //Массив
-            arrData.sort((prev, next) => { //Сортируем данные по дате
+            const chartDataDatasets = []; //Массив для данных
+            arrData.sort((prev, next) => { //Сортируем массив по дате
                 if (prev.w_date < next.w_date) return -1;
                 if (prev.w_date > next.w_date) return 1;
             });
             arrData.map(Ter => { //Заполняем массивы данными
-                if ((Ter.w_date !== null)) {
-                    if ((this.selectedMean === 't') && (Ter.t !== null)) {
+                if ((Ter.w_date !== null)) { //Если существует дата
+                    if ((this.selectedMean === 't') && (Ter.t !== null)) { //Если выбран график по температуре
                         chartlabel = 't⁰ Температура воздуха в C⁰';
                         chartDataLabel.push(Ter.w_date);
                         chartDataDatasets.push(Ter.t);
                         return;
                     };
-                    if ((this.selectedMean === 'po') && (Ter.po !== null)) {
+                    if ((this.selectedMean === 'po') && (Ter.po !== null)) { //Если выбран график по давлению
                         chartlabel = 'p Атмосферное давление на уровне станции в мм. рт. ст.';
                         chartDataLabel.push(Ter.w_date);
                         chartDataDatasets.push(Ter.po);
@@ -98,9 +99,10 @@ export default {
                     
                 };
             });
-            this.graph.chartData.datasets[0].label = chartlabel;
-            this.graph.chartData.labels = chartDataLabel.slice(0, 30);; //Присваеваем данные графику
-            this.graph.chartData.datasets[0].data = chartDataDatasets.slice(0, 30);;
+            this.graph.chartData.datasets[0].label = chartlabel; //Присваеваем данные графику
+            this.graph.chartData.labels = chartDataLabel;
+            this.graph.chartData.datasets[0].data = chartDataDatasets;
+            this.idEx = true;
         },
         async getDataAPI() { //Получение данных с api
             try {
@@ -110,14 +112,14 @@ export default {
                 arrObject.map(element => {
                     if (!arrId.includes(element.wmoid.id)) { //Проверка на включения местности в массиве
                         if (element.wmoid.name !== null) { //Если есть название у территории (Можно убрать, тогда будет поле с именем null)
-                            const elId = element.wmoid.id;
-                            const elName = element.wmoid.name;
+                            const elId = element.wmoid.id; //Сохраняем id территории
+                            const elName = element.wmoid.name; //Сохраняем название территории
                             const newTer = {};
                             newTer.id = elId;
                             newTer.name = elName;
-                            newTer.data = [];
+                            newTer.data = []; //Массив для данных с этой территории
                             this.arrTer.push(newTer); //Добавляем новый объект в массив территорий
-                            arrId.push(elId);
+                            arrId.push(elId); //Сохраняем ид в массиве, чтобы знать что такую территорию уже добавили
                         }
                     };
                     this.arrTer.map(terrain => {
@@ -126,19 +128,34 @@ export default {
                         }
                     });
                 });
-                console.log(this.arrTer);
             } catch(e) {
                 alert('Error: ' + e);
             }
         },
         async createFirstGraph() { //Функция для загрузки первого графика
-            await this.getDataAPI();
-            this.selectedTer = this.arrTer[0];
-            this.redrawGraph();
-        }
+            const windowData = Object.fromEntries(new URL(window.location).searchParams.entries()); //Считываем ссылку
+            await this.getDataAPI(); //Запрашиваем апи
+            if ((windowData.id)) { //Если в ссылке указан параметр id
+
+                const dataBase = require('@/db/db.json').dataBase; //Тут должно быть подключение к БД (временно читает данные из json)
+
+                const Ter = dataBase.find(el => el.id == windowData.id); //Проверяем есть ли такой id в БД
+                if (Ter !== undefined) {
+                    this.selectedMean = Ter.mean; //Заполняем данные
+                    const selectID = this.arrTer.find(item => item.id == Ter.idTer);
+                    this.selectedTer = selectID;
+                    this.redrawGraph(); //Перерисовываем график
+                } else {
+                    this.idEx = false; //Если нет id в бд
+                }
+            } else {
+                this.selectedTer = this.arrTer[0]; //Если не указан id в ссылке, строим график по первому запросу
+                this.redrawGraph();
+            }
+        },
     },
-    mounted() {
-        this.createFirstGraph()
+    created() {
+        this.createFirstGraph() //Создание первого графика
     }
 }
 </script>
