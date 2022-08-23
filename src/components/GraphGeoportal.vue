@@ -6,9 +6,9 @@
             :chart-data="this.graph.chartData"
             :height="heightGraph"
         />
-        <div class="col-lg-4">
+        <div class="container col-lg-4">
             <div class="row row-cols-1 justify-content-center align-items-center">
-                <select class="col-10" @change="redrawGraph()" v-model="selectedTer">
+                <select class="col-10" @change="redrawGraph(); changeId()" v-model="selectedTer">
                     <option disabled value="" selected="true">Выберите один из вариантов</option>
                     <option v-for="ter in arrTer" :key="ter.id" :value="ter">{{ter.name}}</option>
                 </select>
@@ -16,7 +16,7 @@
                     <div class="row col-7 justify-content-center"><span class="col-10">Вертикальные данные:</span></div>
                     <div class="row col-5">Горизонтальные данные:</div>
                     <div class="row col-7">
-                        <select @change="redrawGraph()" v-model="selectedMean">
+                        <select @change="redrawGraph(); changeId()" v-model="selectedMean">
                             <option disabled value="">Выберите один из вариантов</option>
                             <option value="t">Температура</option>
                             <option value="po">Давление</option>
@@ -29,8 +29,15 @@
                         </select>
                     </div>
                 </div>
-                <div v-if="!idEx" class="fs-3 text">
+                <div v-if="idEx === false" class="fs-3 text">
                     Графика с таким id не существует
+                </div>
+                <div v-if="idEx" class="row col-7 align-self-end mt-3">
+                    <button @click="generationId()" class="p-2 btn btn-outline-primary">Сохранить график</button>
+                </div>
+                <div v-if="URLforSave" class="row align-self-end mt-3 row-cols-1">
+                    <div>Ссылка на график: </div>
+                    <button class="btn btn-link mt-3">{{URLforSave}}</button>
                 </div>
             </div>
         </div>
@@ -48,7 +55,8 @@ export default {
     },
     data() {
         return {
-            idEx: true, //Существует ли id графика
+            idPage: '', //id Графика
+            idEx: null, //Существует ли id графика
             selectedMean: 't', //Вертикальная шкала графика
             selectedTer: '', //Выбранная территория
             arrTer: [], //Массив территорий
@@ -62,7 +70,7 @@ export default {
                         {
                             label: 't⁰ Температура воздуха в C⁰', //Название графика
                             data: [], //Данные по графику
-                            backgroundColor: 'rgb(75, 192, 192)', //Цвет графика
+                            backgroundColor: 'rgb(13, 110, 253)', //Цвет графика
                         } 
                     ]
                 },
@@ -70,9 +78,14 @@ export default {
                     responsive: true, //Адаптивность
                 },
             },
+            URLforSave: '', //Ссылка для сохранения графика
         }
     }, 
     methods: {
+        changeId() { //Сбрасывает id при изменении графика
+            window.history.pushState(null, document.title, `${window.location.origin}`);
+            this.URLforSave = false;
+        },
         redrawGraph() { //Функция для перерисовки графика
             let chartlabel = '';
             const arrData = this.selectedTer.data; //Берём данные выбранной территории
@@ -135,11 +148,12 @@ export default {
         async createFirstGraph() { //Функция для загрузки первого графика
             const windowData = Object.fromEntries(new URL(window.location).searchParams.entries()); //Считываем ссылку
             await this.getDataAPI(); //Запрашиваем апи
-            if ((windowData.id)) { //Если в ссылке указан параметр id
+            if ((windowData.id) && (windowData.id !== '')) { //Если в ссылке указан параметр id и он не пустой
+                this.idPage = windowData.id;
 
                 const dataBase = require('@/db/db.json').dataBase; //Тут должно быть подключение к БД (временно читает данные из json)
 
-                const Ter = dataBase.find(el => el.id == windowData.id); //Проверяем есть ли такой id в БД
+                const Ter = dataBase.find(el => el.id == this.idPage); //Проверяем есть ли такой id в БД
                 if (Ter !== undefined) {
                     this.selectedMean = Ter.mean; //Заполняем данные
                     const selectID = this.arrTer.find(item => item.id == Ter.idTer);
@@ -153,6 +167,19 @@ export default {
                 this.redrawGraph();
             }
         },
+        generationId() { //Создаёт id графика
+            const saveObj = {}; //Объект для отправки
+            const saveId = `${this.selectedTer.id}${this.selectedMean}${Date.now()}`; //id (id местности)(данные)(дата)
+            const saveIdTer = `${this.selectedTer.id}`; //id Местности
+            const saveMean = `${this.selectedMean}`; //Данные
+            saveObj.id = saveId;
+            saveObj.idTer = saveIdTer;
+            saveObj.mean = saveMean;
+            this.URLforSave = `${window.location.origin}/?id=${saveId}`; //Сохраняем ссылку для показа
+            window.history.pushState(null, document.title, `${window.location.origin}/?id=${saveId}`); //Пушим ссылку в URL
+
+            console.log(saveObj); //Отправка этого объекта в БД
+        }
     },
     created() {
         this.createFirstGraph() //Создание первого графика
