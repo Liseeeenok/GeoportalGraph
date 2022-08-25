@@ -1,14 +1,25 @@
 <template>
     <div class="row row-cols-1 row-cols-lg-2 align-items-center justify-content-between">
         <Bar
-            class="col-lg-8"
+            :class="idEx === false ? 'col-lg-8' : 'col-lg-12'"
             :chart-options="this.graph.chartOptions"
             :chart-data="this.graph.chartData"
             :height="heightGraph"
         />
-        <div class="container col-lg-4">
+        <div v-if="idEx === false" class="container col-lg-4">
             <div class="row row-cols-1 justify-content-center align-items-center">
-                <select class="col-10" @change="redrawGraph(); changeId()" v-model="selectedTer">
+                <div class="mb-1">
+                    Цвет графика:
+                </div>
+                <div class="row row-cols-2 justify-content-center col-10">
+                    <div class="col-1 p-1 mb-1" style="background-color: red"></div>
+                    <input class="col-11 mb-1" type="range" min="0" max="255" step="1" v-model="this.selectedColor.red" :oninput="changeColor()"/>
+                    <div class="col-1 p-1 mb-1" style="background-color: green"></div>
+                    <input class="col-11 mb-1" type="range" min="0" max="255" step="1" v-model="this.selectedColor.green" :oninput="changeColor()"/>
+                    <div class="col-1 p-1 mb-1" style="background-color: blue"></div>
+                    <input class="col-11 mb-1" type="range" min="0" max="255" step="1" v-model="this.selectedColor.blue" :oninput="changeColor()"/>
+                </div>
+                <select class="col-10 mt-3" @change="redrawGraph(); changeId()" v-model="selectedTer">
                     <option disabled value="" selected="true">Выберите один из вариантов</option>
                     <option v-for="ter in arrTer" :key="ter.id" :value="ter">{{ter.name}}</option>
                 </select>
@@ -29,17 +40,17 @@
                         </select>
                     </div>
                 </div>
-                <div v-if="idEx === false" class="fs-3 text">
-                    Графика с таким id не существует
-                </div>
-                <div v-if="idEx" class="row col-7 align-self-end mt-3">
+                <div class="row col-7 align-self-end mt-3">
                     <button @click="generationId()" class="p-2 btn btn-outline-primary">Сохранить график</button>
                 </div>
-                <div v-if="URLforSave" class="row align-self-end mt-3 row-cols-1">
-                    <div>Ссылка на график: </div>
-                    <button class="btn btn-link mt-3">{{URLforSave}}</button>
-                </div>
             </div>
+        </div>
+        <div v-if="idEx === null" class="col-lg-12 fs-3 text">
+            Графика с таким id не существует
+        </div>
+        <div v-if="URLforSave" class="row align-self-end mt-3 row-cols-1 col-lg-12">
+            <div>Ссылка на график: </div>
+            <button class="btn btn-link mt-3">{{URLforSave}}</button>
         </div>
     </div>
 </template>
@@ -55,14 +66,24 @@ export default {
     },
     data() {
         return {
+            standartColor: { // Стандартный цвет графика
+                red: '13',
+                green: '110',
+                blue: '253'
+            },
+            selectedColor: {
+                red: '',
+                green: '',
+                blue: ''
+            }, //Выбранный цвет графика
             idPage: '', //id Графика
-            idEx: null, //Существует ли id графика
+            idEx: undefined, //Существует ли id графика
             selectedMean: 't', //Вертикальная шкала графика
             selectedTer: '', //Выбранная территория
             arrTer: [], //Массив территорий
             iDisplayLength: 3061, //кол-во запрашиваемых строк
             baseURL: 'http://cris.icc.ru/dataset/list?f=1875&count_rows=true&iDisplayStart=0', //Базовая ссылка (разбить)
-            heightGraph: 300, //Высота графика (в пикселях)
+            heightGraph: 200, //Высота графика (в пикселях)
             graph: { //Настройки графика
                 chartData: { //Данные графика
                     labels: [], //Горизонтальные подписи
@@ -70,7 +91,7 @@ export default {
                         {
                             label: 't⁰ Температура воздуха в C⁰', //Название графика
                             data: [], //Данные по графику
-                            backgroundColor: 'rgb(13, 110, 253)', //Цвет графика
+                            backgroundColor: '', //Цвет графика
                         } 
                     ]
                 },
@@ -112,10 +133,10 @@ export default {
                     
                 };
             });
-            this.graph.chartData.datasets[0].label = chartlabel; //Присваеваем данные графику
+            this.graph.chartData.datasets[0].label = chartlabel; //Присваеваем данные графику 
             this.graph.chartData.labels = chartDataLabel;
             this.graph.chartData.datasets[0].data = chartDataDatasets;
-            this.idEx = true;
+            this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
         },
         async getDataAPI() { //Получение данных с api
             try {
@@ -158,12 +179,18 @@ export default {
                     this.selectedMean = Ter.mean; //Заполняем данные
                     const selectID = this.arrTer.find(item => item.id == Ter.idTer);
                     this.selectedTer = selectID;
+                    this.selectedColor.red = Ter.color.red;
+                    this.selectedColor.green = Ter.color.green;
+                    this.selectedColor.blue = Ter.color.blue;
+                    this.idEx = true;
                     this.redrawGraph(); //Перерисовываем график
                 } else {
-                    this.idEx = false; //Если нет id в бд
+                    this.idEx = null; //Если нет id в бд
                 }
             } else {
                 this.selectedTer = this.arrTer[0]; //Если не указан id в ссылке, строим график по первому запросу
+                this.selectedColor = this.standartColor; // Стандартный цвет для графика
+                this.idEx = false;
                 this.redrawGraph();
             }
         },
@@ -179,6 +206,9 @@ export default {
             window.history.pushState(null, document.title, `${window.location.origin}/?id=${saveId}`); //Пушим ссылку в URL
 
             console.log(saveObj); //Отправка этого объекта в БД
+        },
+        changeColor() {
+            this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
         }
     },
     created() {

@@ -2,17 +2,31 @@
     {
         "id":"1",
         "idTer":"30731",
-        "mean":"t"
-
+        "mean":"t",
+        "color":{
+            "red":"255",
+            "green":"0",
+            "blue":"0"
+        }
     },
     {
         "id":"2",
         "idTer":"30731",
-        "mean":"po"
+        "mean":"po",
+        "color":{
+            "red":"227",
+            "green":"85",
+            "blue":"229"
+        }
     },
     {
         "id":"3",
         "idTer":"30712",
-        "mean":"t"
+        "mean":"t",
+        "color":{
+            "red":"54",
+            "green":"201",
+            "blue":"184"
+        }
     }
 ]}
