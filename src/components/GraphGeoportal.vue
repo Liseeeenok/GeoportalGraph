@@ -9,7 +9,13 @@
         <div v-if="idEx === false" class="container col-lg-4">
             <div class="row row-cols-1 justify-content-center align-items-center">
                 <div class="mb-1">
-                    Цвет графика:
+                    Название графика:
+                </div>
+                <div class="row row-cols-1 justify-content-center col-10 mb-1">
+                    <input placeholder="Введите название графика" v-model="this.selectedTitle">
+                </div>
+                <div class="mb-1">
+                    Цвет графика: rgb({{selectedColor.red}},{{selectedColor.green}},{{selectedColor.blue}})
                 </div>
                 <div class="row row-cols-2 justify-content-center col-10">
                     <div class="col-1 p-1 mb-1" style="background-color: red"></div>
@@ -66,6 +72,7 @@ export default {
     },
     data() {
         return {
+            selectedTitle: '', //Название графика
             standartColor: { // Стандартный цвет графика
                 red: '13',
                 green: '110',
@@ -97,12 +104,24 @@ export default {
                 },
                 chartOptions: { //Опции графика
                     responsive: true, //Адаптивность
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '',
+                            font: {
+                                size: 20,
+                            }
+                        }
+                    }
                 },
             },
             URLforSave: '', //Ссылка для сохранения графика
         }
     }, 
     methods: {
+        test() {
+            console.log(this.selectedTitle)
+        },
         changeId() { //Сбрасывает id при изменении графика
             window.history.pushState(null, document.title, `${window.location.origin}`);
             this.URLforSave = false;
@@ -209,10 +228,19 @@ export default {
         },
         changeColor() {
             this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
+        },
+        changeLabel() {
+            this.selectedTitle = 'Test'
+            this.graph.chartOptions.plugins.title.text = this.selectedTitle;
         }
     },
     created() {
         this.createFirstGraph() //Создание первого графика
+    },
+    watch: {
+        selectedTitle: function() {
+            this.graph.chartOptions.plugins.title.text = this.selectedTitle;
+        }
     }
 }
 </script>
