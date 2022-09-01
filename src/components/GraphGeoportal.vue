@@ -29,9 +29,8 @@
                     <option disabled value="" selected="true">Выберите один из вариантов</option>
                     <option v-for="ter in arrTer" :key="ter.id" :value="ter">{{ter.name}}</option>
                 </select>
-                <div class="row col-10 justify-content-between pe-0 ps-0 mt-2 ">
-                    <div class="row col-7 justify-content-center"><span class="col-10">Вертикальные данные:</span></div>
-                    <div class="row col-5">Горизонтальные данные:</div>
+                <div class="row col-10 justify-content-center pe-0 ps-0 mt-2 ">
+                    <div class="row col-10 justify-content-center"><span class="col-10">Вертикальные данные:</span></div>
                     <div class="row col-7">
                         <select @change="redrawGraph(); changeId()" v-model="selectedMean">
                             <option disabled value="">Выберите один из вариантов</option>
@@ -39,12 +38,18 @@
                             <option value="po">Давление</option>
                         </select>
                     </div>
-                    <div class="row col-5">
-                        <select>
+                </div>
+                <div class="row row-cols-2 mt-3">
+                    <div class="col">Отображать с:</div>
+                    <select class="col-6" @change="sliceLabelsGraph()" v-model="selectedFirstDate">
                             <option disabled value="">Выберите один из вариантов</option>
-                            <option value="t">Дата</option>
+                            <option v-for="dat in labelsGraph" :value="dat" :key="dat">{{dat}}</option>
                         </select>
-                    </div>
+                    <div class="col mt-3">по:</div>
+                    <select class="col-6 mt-3" @change="sliceLabelsGraph()" v-model="selectedEndDate">
+                            <option disabled value="">Выберите один из вариантов</option>
+                            <option v-for="dat in labelsGraph" :value="dat" :key="dat">{{dat}}</option>
+                        </select>
                 </div>
                 <div class="row col-7 align-self-end mt-3">
                     <button @click="generationId()" class="p-2 btn btn-outline-primary">Сохранить график</button>
@@ -72,6 +77,8 @@ export default {
     },
     data() {
         return {
+            selectedFirstDate: '', //Первая дата графика
+            selectedEndDate: '', //Последняя дата графика
             selectedTitle: '', //Название графика
             standartColor: { // Стандартный цвет графика
                 red: '13',
@@ -91,12 +98,14 @@ export default {
             iDisplayLength: 3061, //кол-во запрашиваемых строк
             baseURL: 'http://cris.icc.ru/dataset/list?f=1875&count_rows=true&iDisplayStart=0', //Базовая ссылка (разбить)
             heightGraph: 200, //Высота графика (в пикселях)
+            labelsGraph: [], //массив дат для графика
+            dataGraph: [], //массив данных для графика
             graph: { //Настройки графика
                 chartData: { //Данные графика
                     labels: [], //Горизонтальные подписи
                     datasets: [ 
                         {
-                            label: 't⁰ Температура воздуха в C⁰', //Название графика
+                            label: '', //Название графика
                             data: [], //Данные по графику
                             backgroundColor: '', //Цвет графика
                         } 
@@ -119,9 +128,6 @@ export default {
         }
     }, 
     methods: {
-        test() {
-            console.log(this.selectedTitle)
-        },
         changeId() { //Сбрасывает id при изменении графика
             window.history.pushState(null, document.title, `${window.location.origin}`);
             this.URLforSave = false;
@@ -138,13 +144,13 @@ export default {
             arrData.map(Ter => { //Заполняем массивы данными
                 if ((Ter.w_date !== null)) { //Если существует дата
                     if ((this.selectedMean === 't') && (Ter.t !== null)) { //Если выбран график по температуре
-                        chartlabel = 't⁰ Температура воздуха в C⁰';
+                        chartlabel = this.selectedMean + ' ' + Ter.wmoid.name;
                         chartDataLabel.push(Ter.w_date);
                         chartDataDatasets.push(Ter.t);
                         return;
                     };
                     if ((this.selectedMean === 'po') && (Ter.po !== null)) { //Если выбран график по давлению
-                        chartlabel = 'p Атмосферное давление на уровне станции в мм. рт. ст.';
+                        chartlabel = this.selectedMean + ' ' + Ter.wmoid.name;
                         chartDataLabel.push(Ter.w_date);
                         chartDataDatasets.push(Ter.po);
                         return;
@@ -153,9 +159,12 @@ export default {
                 };
             });
             this.graph.chartData.datasets[0].label = chartlabel; //Присваеваем данные графику 
+            this.labelsGraph = chartDataLabel;
             this.graph.chartData.labels = chartDataLabel;
+            this.dataGraph = chartDataDatasets;
             this.graph.chartData.datasets[0].data = chartDataDatasets;
             this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
+            this.sliceLabelsGraph()
         },
         async getDataAPI() { //Получение данных с api
             try {
@@ -187,7 +196,6 @@ export default {
         },
         async createFirstGraph() { //Функция для загрузки первого графика
             const windowData = Object.fromEntries(new URL(window.location).searchParams.entries()); //Считываем ссылку
-            await this.getDataAPI(); //Запрашиваем апи
             if ((windowData.id) && (windowData.id !== '')) { //Если в ссылке указан параметр id и он не пустой
                 this.idPage = windowData.id;
 
@@ -195,18 +203,12 @@ export default {
 
                 const Ter = dataBase.find(el => el.id == this.idPage); //Проверяем есть ли такой id в БД
                 if (Ter !== undefined) {
-                    this.selectedMean = Ter.mean; //Заполняем данные
-                    const selectID = this.arrTer.find(item => item.id == Ter.idTer);
-                    this.selectedTer = selectID;
-                    this.selectedColor.red = Ter.color.red;
-                    this.selectedColor.green = Ter.color.green;
-                    this.selectedColor.blue = Ter.color.blue;
-                    this.idEx = true;
-                    this.redrawGraph(); //Перерисовываем график
+                    this.graph = Ter.dataGraph;
                 } else {
                     this.idEx = null; //Если нет id в бд
                 }
             } else {
+                await this.getDataAPI(); //Запрашиваем апи
                 this.selectedTer = this.arrTer[0]; //Если не указан id в ссылке, строим график по первому запросу
                 this.selectedColor = this.standartColor; // Стандартный цвет для графика
                 this.idEx = false;
@@ -216,29 +218,33 @@ export default {
         generationId() { //Создаёт id графика
             const saveObj = {}; //Объект для отправки
             const saveId = `${this.selectedTer.id}${this.selectedMean}${Date.now()}`; //id (id местности)(данные)(дата)
-            const saveIdTer = `${this.selectedTer.id}`; //id Местности
-            const saveMean = `${this.selectedMean}`; //Данные
+            const saveDataGraph = this.graph; //Данные графика
             saveObj.id = saveId;
-            saveObj.idTer = saveIdTer;
-            saveObj.mean = saveMean;
+            saveObj.dataGraph = saveDataGraph;
             this.URLforSave = `${window.location.origin}/?id=${saveId}`; //Сохраняем ссылку для показа
-            window.history.pushState(null, document.title, `${window.location.origin}/?id=${saveId}`); //Пушим ссылку в URL
 
-            console.log(saveObj); //Отправка этого объекта в БД
+            console.log(JSON.stringify(saveObj)); //Отправка этого объекта в БД
         },
-        changeColor() {
+        changeColor() { //Изменяет цвет графика
             this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
         },
-        changeLabel() {
-            this.selectedTitle = 'Test'
+        changeLabel() { //Изменяет название графика
             this.graph.chartOptions.plugins.title.text = this.selectedTitle;
+        },
+        sliceLabelsGraph() { //Обрезает график по нужной дате
+            if ((this.selectedFirstDate !== '') && (this.selectedEndDate !== '')) {
+                const FirstIndex = this.labelsGraph.indexOf(this.selectedFirstDate);
+                const EndIndex = this.labelsGraph.indexOf(this.selectedEndDate);
+                this.graph.chartData.labels = this.labelsGraph.slice(FirstIndex, EndIndex+1);
+                this.graph.chartData.datasets[0].data = this.dataGraph.slice(FirstIndex, EndIndex+1);
+            }
         }
     },
     created() {
         this.createFirstGraph() //Создание первого графика
     },
     watch: {
-        selectedTitle: function() {
+        selectedTitle: function() { //Отслеживание изменения названия
             this.graph.chartOptions.plugins.title.text = this.selectedTitle;
         }
     }
