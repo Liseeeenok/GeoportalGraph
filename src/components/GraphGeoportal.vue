@@ -129,7 +129,6 @@ export default {
     }, 
     methods: {
         changeId() { //Сбрасывает id при изменении графика
-            window.history.pushState(null, document.title, `${window.location.origin}`);
             this.URLforSave = false;
         },
         redrawGraph() { //Функция для перерисовки графика
@@ -160,11 +159,10 @@ export default {
             });
             this.graph.chartData.datasets[0].label = chartlabel; //Присваеваем данные графику 
             this.labelsGraph = chartDataLabel;
-            this.graph.chartData.labels = chartDataLabel;
+            //this.graph.chartData.labels = chartDataLabel; Убрано, чтобы график не загружался сразу после выбора территории
             this.dataGraph = chartDataDatasets;
-            this.graph.chartData.datasets[0].data = chartDataDatasets;
-            this.graph.chartData.datasets[0].backgroundColor = `rgb(${this.selectedColor.red},${this.selectedColor.green},${this.selectedColor.blue}`;
-            this.sliceLabelsGraph()
+            //this.graph.chartData.datasets[0].data = chartDataDatasets;
+            this.sliceLabelsGraph() //Обрезка данных по условию
         },
         async getDataAPI() { //Получение данных с api
             try {
@@ -203,13 +201,12 @@ export default {
 
                 const Ter = dataBase.find(el => el.id == this.idPage); //Проверяем есть ли такой id в БД
                 if (Ter !== undefined) {
-                    this.graph = Ter.dataGraph;
+                    this.graph = Ter.dataGraph; //Записываем данные графика
                 } else {
                     this.idEx = null; //Если нет id в бд
                 }
             } else {
                 await this.getDataAPI(); //Запрашиваем апи
-                this.selectedTer = this.arrTer[0]; //Если не указан id в ссылке, строим график по первому запросу
                 this.selectedColor = this.standartColor; // Стандартный цвет для графика
                 this.idEx = false;
                 this.redrawGraph();
