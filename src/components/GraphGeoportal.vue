@@ -59,8 +59,7 @@
                     <div class="row col-10 mt-1 pb-2">
                         <select @change="redrawGraph(n-1); changeId()" v-model="selectedMean[n-1].data">
                             <option disabled :value='""'>Выберите параметр</option>
-                            <option value="t">Температура</option>
-                            <option value="po">Давление</option>
+                            <option v-for="quality in arrQuality" :key="quality.fieldname" :value="quality.fieldname">{{quality.title}}</option>
                         </select>
                     </div>
                 </div>
@@ -112,6 +111,7 @@ export default {
             arrTer: [], //Массив территорий
             iDisplayLength: 3061, //кол-во запрашиваемых строк
             baseURL: 'http://cris.icc.ru/dataset/list?f=1875&count_rows=true&iDisplayStart=0', //Базовая ссылка (разбить)
+            arrQuality: [], //Массив свойств апишки
             heightGraph: 200, //Высота графика (в пикселях)
             labelsGraph: [], //массив дат для графика
             dataGraph: [[]], //массив данных для графика
@@ -181,7 +181,12 @@ export default {
         },
         async getDataAPI() { //Получение данных с api
             try {
-                const arrId = []; //Массив для сохранения id мест
+                const arrId = []; //Массив для сохранения id мест 
+                const response2 = await axios.get('http://cris.icc.ru/dataset/list?f=100&f_id=1875'); //Запрос
+                const arrObject2 = JSON.parse(response2.data.aaData[0].JSON).columns; //Свойства графиков апи
+                arrObject2.forEach(el => {
+                    if(el.visible) this.arrQuality.push(el); //Отсеиваем скрытые свойства
+                })
                 const response = await axios.get(this.baseURL + '&iDisplayLength=' + this.iDisplayLength); //Запрос
                 const arrObject = response.data.aaData; //Результат
                 arrObject.map(element => {
@@ -251,7 +256,7 @@ export default {
                 this.dataGraph.forEach((el, index) => this.graph.chartData.datasets[index].data = el.slice(FirstIndex, EndIndex+1));
             }
         },
-        addGraph() {
+        addGraph() { //Добавление графика
             this.selectedColor[this.countGraph] = JSON.parse(JSON.stringify(this.standartColor));
             this.selectedMean.push({data: ""});
             this.selectedTer.push({data: ""});
