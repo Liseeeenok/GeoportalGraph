@@ -1,6 +1,14 @@
 <template>
     <div class="row row-cols-1 align-items-center justify-content-between">
+        <Line
+            :style="typeGraph == '1' ? 'display: block' : 'display: none'"
+            :class="idEx === false ? 'col-lg-9' : 'col-lg-12'"
+            :chart-options="this.graph.chartOptions"
+            :chart-data="this.graph.chartData"
+            :height="heightGraph"
+        />
         <Bar
+            :style="typeGraph == '2' ? 'display: block' : 'display: none'"
             :class="idEx === false ? 'col-lg-9' : 'col-lg-12'"
             :chart-options="this.graph.chartOptions"
             :chart-data="this.graph.chartData"
@@ -18,12 +26,12 @@
                     <div class="col pe-0 ps-0">Отображать с:</div>
                         <select class="col-6" @change="sliceLabelsGraph()" v-model="selectedFirstDate">
                             <option disabled value="">Выберите дату</option>
-                            <option v-for="dat in labelsGraph" :value="dat" :key="dat">{{dat}}</option>
+                            <option v-for="dat in arrDateGraph" :value="dat" :key="dat">{{dat}}</option>
                         </select>
                     <div class="col mt-1">по:</div>
                         <select class="col-6 mt-1" @change="sliceLabelsGraph()" v-model="selectedEndDate">
                             <option disabled value="">Выберите дату</option>
-                            <option v-for="dat in labelsGraph" :value="dat" :key="dat">{{dat}}</option>
+                            <option v-for="dat in arrDateGraph" :value="dat" :key="dat">{{dat}}</option>
                         </select>
                 </div>
                 <div class="row col-8 align-self-end mt-3">
@@ -31,6 +39,13 @@
                 </div>
                 <div class="row col-8 align-self-end mt-3">
                     <button @click="generationId()" class="p-2 btn btn-outline-primary">Сохранить график</button>
+                </div>
+                <div class="row col-8 align-self-end mt-3">
+                    <select class="col-12 mt-1" v-model="typeGraph">
+                        <option disabled value="">Выберите вид графика</option>
+                        <option :value="1">Линейный график</option>
+                        <option :value="2">Столбчатый график</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -63,6 +78,15 @@
                         </select>
                     </div>
                 </div>
+                <div class="row col-10 justify-content-center pe-0 ps-0 mt-1">
+                    <div class="row col-12 justify-content-center"><span class="col-12">Горизонтальные данные:</span></div>
+                    <div class="row col-10 mt-1 pb-2">
+                        <select @change="redrawGraph(n-1); changeId()" v-model="selectedHorizontal[n-1].data">
+                            <option disabled :value='""'>Выберите параметр</option>
+                            <option v-for="quality in arrQuality" :key="quality.fieldname" :value="quality.fieldname">{{quality.title}}</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
         <div v-if="idEx === null" class="col-lg-12 fs-3 text">
@@ -76,16 +100,18 @@
 </template>
 
 <script>
-import axios from 'axios'
-import { Bar } from 'vue-chartjs'
-import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js'
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
+import axios from 'axios';
+import { Bar } from 'vue-chartjs';
+import { Line } from "vue-chartjs";
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler } from 'chart.js';
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Filler);
 export default {
     components: {
-        Bar,
+        Bar, Line,
     },
     data() {
         return {
+            typeGraph: 1,
             countGraph: 1,
             selectedFirstDate: '', //Первая дата графика
             selectedEndDate: '', //Последняя дата графика
@@ -105,6 +131,9 @@ export default {
             selectedMean: [{
                 data: ''
             }], //Вертикальная шкала графика
+            selectedHorizontal: [{
+                data: ''
+            }], //Горизонатльные данные графика
             selectedTer: [{
                 data: ''
             }], //Выбранная территория
@@ -113,7 +142,8 @@ export default {
             baseURL: 'http://cris.icc.ru/dataset/list?f=1875&count_rows=true&iDisplayStart=0', //Базовая ссылка (разбить)
             arrQuality: [], //Массив свойств апишки
             heightGraph: 200, //Высота графика (в пикселях)
-            labelsGraph: [], //массив дат для графика
+            arrDateGraph: [], //массив дат для графика
+            labelsGraph: [], 
             dataGraph: [[]], //массив данных для графика
             graph: { //Настройки графика
                 chartData: { //Данные графика
@@ -122,6 +152,7 @@ export default {
                         {
                             label: '', //Название графика
                             data: [], //Данные по графику
+                            fill: true,
                             backgroundColor: '', //Цвет графика
                         } 
                     ]
@@ -149,34 +180,33 @@ export default {
         redrawGraph(index) { //Функция для перерисовки графика
             let chartlabel = '';
             const arrData = this.selectedTer[index].data; //Берём данные выбранной территории
-            const chartDataLabel = []; //Массив для времени
+            const chartHorizontalData = []; 
             const chartDataDatasets = []; //Массив для данных
+            const chartDataLabel = []; //Массив для времени
+
+            const selectedQuality = this.selectedMean[index].data;
+            const selectedQualityHorizontal = this.selectedHorizontal[index].data;
+
             arrData.sort((prev, next) => { //Сортируем массив по дате
                 if (prev.w_date < next.w_date) return -1;
                 if (prev.w_date > next.w_date) return 1;
             });
             arrData.map(Ter => { //Заполняем массивы данными
                 if ((Ter.w_date !== null)) { //Если существует дата
-                    if ((this.selectedMean[index].data === 't') && (Ter.t !== null)) { //Если выбран график по температуре
-                        chartlabel = this.selectedMean[index].data + ' ' + Ter.wmoid.name;
-                        chartDataLabel.push(Ter.w_date);
-                        chartDataDatasets.push(Ter.t);
-                        return;
-                    };
-                    if ((this.selectedMean[index].data === 'po') && (Ter.po !== null)) { //Если выбран график по давлению
-                        chartlabel = this.selectedMean[index].data + ' ' + Ter.wmoid.name;
-                        chartDataLabel.push(Ter.w_date);
-                        chartDataDatasets.push(Ter.po);
-                        return;
-                    };
                     
+                    if ((Ter[selectedQuality] !== null) && (Ter[selectedQualityHorizontal] !== null)) { //Если выбран график вертикальные данные
+                        chartDataLabel.push(Ter.w_date);
+                        chartlabel = this.selectedMean[index].data + ' ' + Ter.wmoid.name;
+                        chartHorizontalData.push(Ter[selectedQualityHorizontal]);
+                        chartDataDatasets.push(Ter[selectedQuality]);
+                        return;
+                    };
                 };
             });
             this.graph.chartData.datasets[index].label = chartlabel; //Присваеваем данные графику 
-            this.labelsGraph = chartDataLabel;
-            //this.graph.chartData.labels = chartDataLabel; Убрано, чтобы график не загружался сразу после выбора территории
+            this.labelsGraph = chartHorizontalData;
+            this.arrDateGraph = chartDataLabel;
             this.dataGraph[index] = chartDataDatasets;
-            //this.graph.chartData.datasets[0].data = chartDataDatasets;
             this.sliceLabelsGraph() //Обрезка данных по условию
         },
         async getDataAPI() { //Получение данных с api
@@ -226,10 +256,9 @@ export default {
                     this.idEx = null; //Если нет id в бд
                 }
             } else {
-                await this.getDataAPI(); //Запрашиваем апи
-                this.selectedColor[0] = JSON.parse(JSON.stringify(this.standartColor)); // Стандартный цвет для графика
-
                 this.idEx = false;
+                this.selectedColor[0] = JSON.parse(JSON.stringify(this.standartColor)); // Стандартный цвет для графика
+                await this.getDataAPI(); //Запрашиваем апи
             }
         },
         generationId() { //Создаёт id графика
@@ -243,26 +272,31 @@ export default {
             console.log(JSON.stringify(saveObj)); //Отправка этого объекта в БД
         },
         changeColor(index) { //Изменяет цвет графика
-            this.graph.chartData.datasets[index].backgroundColor = `rgb(${this.selectedColor[index].red},${this.selectedColor[index].green},${this.selectedColor[index].blue}`;
+            this.graph.chartData.datasets[index].backgroundColor = `rgba(${this.selectedColor[index].red},${this.selectedColor[index].green},${this.selectedColor[index].blue},0.5`;
         },
         changeLabel() { //Изменяет название графика
             this.graph.chartOptions.plugins.title.text = this.selectedTitle;
         },
         sliceLabelsGraph() { //Обрезает график по нужной дате
             if ((this.selectedFirstDate !== '') && (this.selectedEndDate !== '')) {
-                const FirstIndex = this.labelsGraph.indexOf(this.selectedFirstDate);
-                const EndIndex = this.labelsGraph.indexOf(this.selectedEndDate);
+                const FirstIndex = this.arrDateGraph.indexOf(this.selectedFirstDate);
+                const EndIndex = this.arrDateGraph.indexOf(this.selectedEndDate);
                 this.graph.chartData.labels = this.labelsGraph.slice(FirstIndex, EndIndex+1);
                 this.dataGraph.forEach((el, index) => this.graph.chartData.datasets[index].data = el.slice(FirstIndex, EndIndex+1));
+                console.log(this.graph);
             }
         },
         addGraph() { //Добавление графика
             this.selectedColor[this.countGraph] = JSON.parse(JSON.stringify(this.standartColor));
             this.selectedMean.push({data: ""});
             this.selectedTer.push({data: ""});
+            this.selectedHorizontal.push({data: ""});
             this.dataGraph[this.countGraph] = [];
-            this.graph.chartData.datasets.push({label: '', data: [], backgroundColor: ''});
+            this.graph.chartData.datasets.push({fill: true, label: '', data: [], backgroundColor: ''});
             this.countGraph++;
+        },
+        changeTypeGraph(type) { //Изменение типа графика
+            this.typeGraph = type;
         }
     },
     created() {
