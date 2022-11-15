@@ -55,15 +55,10 @@
         <div v-if="idEx === false" class="container row pe-0 ps-0 justify-content-center">
             <div v-for="n in countGraph" :key="n-1" class="row justify-content-center align-items-center col-12 col-sm-6 col-md-4 col-lg-3 border rounded ms-3 mt-1 pe-1 ps-1">
                 <div class="mb-1 pt-2">
-                    Цвет графика №{{n}}:<br> rgb({{selectedColor[n-1].red}},{{selectedColor[n-1].green}},{{selectedColor[n-1].blue}})
+                    Цвет графика №{{n}}:
                 </div>
                 <div class="row row-cols-2 justify-content-center col-12">
-                    <div class="col-1 p-1 mb-1" style="background-color: red"></div>
-                    <input class="col-11 mb-1 pe-0 ps-0" type="range" min="0" max="255" step="1" v-model="this.selectedColor[n-1].red" :oninput="changeColor(n-1)"/>
-                    <div class="col-1 p-1 mb-1" style="background-color: green"></div>
-                    <input class="col-11 mb-1 pe-0 ps-0" type="range" min="0" max="255" step="1" v-model="this.selectedColor[n-1].green" :oninput="changeColor(n-1)"/>
-                    <div class="col-1 p-1 mb-1" style="background-color: blue"></div>
-                    <input class="col-11 mb-1 pe-0 ps-0" type="range" min="0" max="255" step="1" v-model="this.selectedColor[n-1].blue" :oninput="changeColor(n-1)"/>
+                    <input type="color" class="form-control form-control-color" v-model="selectedColor[n-1]" :oninput="changeColor(n-1)">
                 </div>
                 <select class="col-12 mt-1" @change="redrawGraph(n-1); changeId()" v-model="selectedTer[n-1]">
                     <option disabled :value='{ "data":"" }'>Выберите территорию</option>
@@ -116,16 +111,8 @@ export default {
             selectedFirstDate: '', //Первая дата графика
             selectedEndDate: '', //Последняя дата графика
             selectedTitle: '', //Название графика
-            standartColor: { // Стандартный цвет графика
-                red: '13',
-                green: '110',
-                blue: '253'
-            },
-            selectedColor: [{
-                red: '',
-                green: '',
-                blue: ''
-            }], //Выбранный цвет графика
+            standartColor: ['#0d6efd'], // Стандартный цвет графика
+            selectedColor: ['#0d6efd'], //Выбранный цвет графика
             idPage: '', //id Графика
             idEx: undefined, //Существует ли id графика
             selectedMean: [{
@@ -153,7 +140,8 @@ export default {
                             label: '', //Название графика
                             data: [], //Данные по графику
                             fill: true,
-                            backgroundColor: '', //Цвет графика
+                            borderColor: '', //Цвет графика
+                            borderWidth: 1
                         } 
                     ]
                 },
@@ -272,7 +260,7 @@ export default {
             console.log(JSON.stringify(saveObj)); //Отправка этого объекта в БД
         },
         changeColor(index) { //Изменяет цвет графика
-            this.graph.chartData.datasets[index].backgroundColor = `rgba(${this.selectedColor[index].red},${this.selectedColor[index].green},${this.selectedColor[index].blue},0.5`;
+            this.graph.chartData.datasets[index].borderColor = this.selectedColor[index];
         },
         changeLabel() { //Изменяет название графика
             this.graph.chartOptions.plugins.title.text = this.selectedTitle;
@@ -292,7 +280,7 @@ export default {
             this.selectedTer.push({data: ""});
             this.selectedHorizontal.push({data: ""});
             this.dataGraph[this.countGraph] = [];
-            this.graph.chartData.datasets.push({fill: true, label: '', data: [], backgroundColor: ''});
+            this.graph.chartData.datasets.push({fill: true, label: '', data: [], borderColor: '', borderWidth: 1});
             this.countGraph++;
         },
         changeTypeGraph(type) { //Изменение типа графика
