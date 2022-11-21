@@ -155,6 +155,22 @@ export default {
                                 size: 20,
                             }
                         }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '',
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: '',
+                            }
+                        },
                     }
                 },
             },
@@ -192,6 +208,8 @@ export default {
                 };
             });
             this.graph.chartData.datasets[index].label = chartlabel; //Присваеваем данные графику 
+            this.graph.chartOptions.scales.x.title.text = selectedQualityHorizontal; //Присваеваем горизонтальный лейбел
+            this.graph.chartOptions.scales.y.title.text = selectedQuality; //Присваеваем вертикальный лейбел
             this.labelsGraph = chartHorizontalData;
             this.arrDateGraph = chartDataLabel;
             this.dataGraph[index] = chartDataDatasets;
