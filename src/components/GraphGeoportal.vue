@@ -24,24 +24,24 @@
                 </div>
                 <div class="row row-cols-2 mt-1">
                     <div class="col pe-0 ps-0">Отображать с:</div>
-                        <select class="col-6" @change="sliceLabelsGraph()" v-model="selectedFirstDate">
+                        <select class="col-6" @change="sliceLabelsGraph(); changeId()" v-model="selectedFirstDate">
                             <option disabled value="">Выберите дату</option>
                             <option v-for="dat in arrDateGraph" :value="dat" :key="dat">{{dat}}</option>
                         </select>
                     <div class="col mt-1">по:</div>
-                        <select class="col-6 mt-1" @change="sliceLabelsGraph()" v-model="selectedEndDate">
+                        <select class="col-6 mt-1" @change="sliceLabelsGraph(); changeId()" v-model="selectedEndDate">
                             <option disabled value="">Выберите дату</option>
                             <option v-for="dat in arrDateGraph" :value="dat" :key="dat">{{dat}}</option>
                         </select>
                 </div>
                 <div class="row col-8 align-self-end mt-3">
-                    <button @click="addGraph()" class="p-2 btn btn-outline-primary">Добавить график</button>
+                    <button @click="addGraph(); changeId()" class="p-2 btn btn-outline-primary">Добавить график</button>
                 </div>
                 <div class="row col-8 align-self-end mt-3">
                     <button @click="generationId()" class="p-2 btn btn-outline-primary">Сохранить график</button>
                 </div>
                 <div class="row col-8 align-self-end mt-3">
-                    <select class="col-12 mt-1" v-model="typeGraph">
+                    <select class="col-12 mt-1" v-model="typeGraph" @change="changeId()">
                         <option disabled value="">Выберите вид графика</option>
                         <option :value="1">Линейный график</option>
                         <option :value="2">Столбчатый график</option>
@@ -58,7 +58,7 @@
                     Цвет графика №{{n}}:
                 </div>
                 <div class="row row-cols-2 justify-content-center col-12">
-                    <input type="color" class="form-control form-control-color" v-model="selectedColor[n-1]" :oninput="changeColor(n-1)">
+                    <input type="color" class="form-control form-control-color" v-model="selectedColor[n-1]" :change="changeColor(n-1)">
                 </div>
                 <select class="col-12 mt-1" @change="redrawGraph(n-1); changeId()" v-model="selectedTer[n-1]">
                     <option disabled :value='{ "data":"" }'>Выберите территорию</option>
@@ -80,6 +80,16 @@
                             <option disabled :value='""'>Выберите параметр</option>
                             <option v-for="quality in arrQuality" :key="quality.fieldname" :value="quality.fieldname">{{quality.title}}</option>
                         </select>
+                    </div>
+                </div>
+                <div class="row col-10 justify-content-center pe-0 ps-0 mt-1">
+                    <div class="row col-10 mt-1 pb-2">
+                        <input placeholder="Вертикальная подпись" v-model="this.verticalTitle">
+                    </div>
+                </div>
+                <div class="row col-10 justify-content-center pe-0 ps-0 mt-1">
+                    <div class="row col-10 mt-1 pb-2">
+                        <input placeholder="Горизонтальная подпись" v-model="this.gorizontalTitle">
                     </div>
                 </div>
             </div>
@@ -111,7 +121,7 @@ export default {
             selectedFirstDate: '', //Первая дата графика
             selectedEndDate: '', //Последняя дата графика
             selectedTitle: '', //Название графика
-            standartColor: ['#0d6efd'], // Стандартный цвет графика
+            standartColor: '#0d6efd', // Стандартный цвет графика
             selectedColor: ['#0d6efd'], //Выбранный цвет графика
             idPage: '', //id Графика
             idEx: undefined, //Существует ли id графика
@@ -132,6 +142,8 @@ export default {
             arrDateGraph: [], //массив дат для графика
             labelsGraph: [], 
             dataGraph: [[]], //массив данных для графика
+            gorizontalTitle: '', //горизонтальная подпись
+            verticalTitle: '', //Вертикальная подпись
             graph: { //Настройки графика
                 chartData: { //Данные графика
                     labels: [], //Горизонтальные подписи
@@ -207,9 +219,15 @@ export default {
                     };
                 };
             });
-            this.graph.chartData.datasets[index].label = chartlabel; //Присваеваем данные графику 
-            this.graph.chartOptions.scales.x.title.text = selectedQualityHorizontal; //Присваеваем горизонтальный лейбел
-            this.graph.chartOptions.scales.y.title.text = selectedQuality; //Присваеваем вертикальный лейбел
+            this.graph.chartData.datasets[index].label = chartlabel; //Присваеваем данные графику
+            if (this.gorizontalTitle == '') {
+                this.gorizontalTitle = selectedQualityHorizontal;
+                this.graph.chartOptions.scales.x.title.text = selectedQualityHorizontal; //Присваеваем горизонтальный лейбел
+            } else this.graph.chartOptions.scales.x.title.text = this.gorizontalTitle;
+            if (this.verticalTitle == '') {
+                this.verticalTitle = selectedQuality;
+                this.graph.chartOptions.scales.y.title.text = selectedQuality; //Присваеваем вертикальный лейбел
+            } else  this.graph.chartOptions.scales.y.title.text = this.verticalTitle;
             this.labelsGraph = chartHorizontalData;
             this.arrDateGraph = chartDataLabel;
             this.dataGraph[index] = chartDataDatasets;
@@ -257,7 +275,34 @@ export default {
 
                 const Ter = dataBase.find(el => el.id == this.idPage); //Проверяем есть ли такой id в БД
                 if (Ter !== undefined) {
-                    this.graph = Ter.dataGraph; //Записываем данные графика
+                    await this.getDataAPI();
+                    //this.redrawGraph();
+                    //this.graph = Ter.dataGraph; //Записываем данные графика
+                    //console.log(Ter);
+                    //console.log(this.arrTer);
+                    this.selectedTer = [];
+                    Ter.arrIdTer.forEach((element, index) => {
+                        this.selectedTer.push(this.arrTer.find(item => item.id == element));
+                    })
+                    console.log(this.selectedTer);
+                    this.selectedMean = Ter.selectedMean;
+                    this.selectedHorizontal = Ter.selectedHorizontal;
+                    this.selectedColor = Ter.selectedColor;
+                    console.log(this.selectedColor);
+                    console.log(Ter.selectedColor);
+                    this.gorizontalTitle = Ter.gorizontalTitle;
+                    this.verticalTitle = Ter.verticalTitle;
+                    this.selectedFirstDate = Ter.selectedFirstDate;
+                    this.selectedEndDate = Ter.selectedEndDate;
+                    this.selectedTitle = Ter.selectedTitle;
+                    this.typeGraph = Ter.typeGraph;
+                    Ter.arrIdTer.forEach((element, index) => {
+                        if (index > 0) this.addGraph();
+                        this.redrawGraph(index);
+                        console.log(this.selectedColor);
+                        console.log(Ter.selectedColor);
+                        this.changeColor(index);
+                    })
                 } else {
                     this.idEx = null; //Если нет id в бд
                 }
@@ -271,9 +316,24 @@ export default {
             const saveObj = {}; //Объект для отправки
             const saveId = `${this.selectedTer[0].id}${this.selectedMean[0].data}${Date.now()}`; //id (id местности)(данные)(дата)
             const saveDataGraph = this.graph; //Данные графика
+            let arrIdTer = [];
+            this.selectedTer.forEach(element => {
+                arrIdTer.push(element.id);
+            })
             saveObj.id = saveId;
-            saveObj.dataGraph = saveDataGraph;
+            saveObj.arrIdTer = arrIdTer;
+            saveObj.selectedMean = this.selectedMean;
+            saveObj.selectedHorizontal = this.selectedHorizontal;
+            saveObj.selectedColor = this.selectedColor;
+            saveObj.gorizontalTitle = this.gorizontalTitle;
+            saveObj.verticalTitle = this.verticalTitle;
+            saveObj.selectedFirstDate = this.selectedFirstDate;
+            saveObj.selectedEndDate = this.selectedEndDate;
+            saveObj.selectedTitle = this.selectedTitle;
+            saveObj.typeGraph = this.typeGraph;
+            //saveObj.dataGraph = saveDataGraph;
             this.URLforSave = `${window.location.origin}/?id=${saveId}`; //Сохраняем ссылку для показа
+
 
             console.log(JSON.stringify(saveObj)); //Отправка этого объекта в БД
         },
@@ -289,11 +349,13 @@ export default {
                 const EndIndex = this.arrDateGraph.indexOf(this.selectedEndDate);
                 this.graph.chartData.labels = this.labelsGraph.slice(FirstIndex, EndIndex+1);
                 this.dataGraph.forEach((el, index) => this.graph.chartData.datasets[index].data = el.slice(FirstIndex, EndIndex+1));
-                console.log(this.graph);
+                //console.log(this.graph);
             }
         },
         addGraph() { //Добавление графика
-            this.selectedColor[this.countGraph] = JSON.parse(JSON.stringify(this.standartColor));
+            if (!this.selectedColor[this.countGraph]) {
+                this.selectedColor[this.countGraph] = this.standartColor;
+            }
             this.selectedMean.push({data: ""});
             this.selectedTer.push({data: ""});
             this.selectedHorizontal.push({data: ""});
@@ -311,6 +373,15 @@ export default {
     watch: {
         selectedTitle: function() { //Отслеживание изменения названия
             this.graph.chartOptions.plugins.title.text = this.selectedTitle;
+            this.changeId();
+        },
+        gorizontalTitle: function() {
+            this.graph.chartOptions.scales.x.title.text = this.gorizontalTitle;
+            this.changeId();
+        },
+        verticalTitle: function() {
+            this.graph.chartOptions.scales.y.title.text = this.verticalTitle;
+            this.changeId();
         }
     }
 }
