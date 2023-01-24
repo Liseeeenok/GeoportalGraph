@@ -243,6 +243,7 @@ export default {
                 })
                 const response = await axios.get(this.baseURL + '&iDisplayLength=' + this.iDisplayLength); //Запрос
                 const arrObject = response.data.aaData; //Результат
+                //console.log(arrObject);
                 arrObject.map(element => {
                     if (!arrId.includes(element.wmoid.id)) { //Проверка на включения местности в массиве
                         if (element.wmoid.name !== null) { //Если есть название у территории (Можно убрать, тогда будет поле с именем null)
@@ -349,7 +350,8 @@ export default {
                 const EndIndex = this.arrDateGraph.indexOf(this.selectedEndDate);
                 this.graph.chartData.labels = this.labelsGraph.slice(FirstIndex, EndIndex+1);
                 this.dataGraph.forEach((el, index) => this.graph.chartData.datasets[index].data = el.slice(FirstIndex, EndIndex+1));
-                //console.log(this.graph);
+                console.log(this.graph.chartData.labels);
+                console.log(this.graph.chartData.datasets[0].data);
             }
         },
         addGraph() { //Добавление графика

@@ -1,22 +1,99 @@
-{"dataBase":[
+{
+  "dataBase": [
     {
-        "id":"0",
-        "arrIdTer":[30712,30731],
-        "selectedMean":[{"data":"t"},{"data":"t"}],
-        "selectedHorizontal":[{"data":"w_date"},{"data":"w_date"}],
-        "selectedColor":[["#0d6efd"],"#47bf45"],
-        "gorizontalTitle":"8910",
-        "verticalTitle":"567",
-        "selectedFirstDate":"2020-11-01 02:00:00",
-        "selectedEndDate":"2020-11-03 11:00:00",
-        "selectedTitle":"1234",
-        "typeGraph":1
+      "id": "0",
+      "arrIdTer": [30712, 30731],
+      "selectedMean": [{ "data": "t" }, { "data": "t" }],
+      "selectedHorizontal": [{ "data": "w_date" }, { "data": "w_date" }],
+      "selectedColor": [["#0d6efd"], "#47bf45"],
+      "gorizontalTitle": "8910",
+      "verticalTitle": "567",
+      "selectedFirstDate": "2020-11-01 02:00:00",
+      "selectedEndDate": "2020-11-03 11:00:00",
+      "selectedTitle": "1234",
+      "typeGraph": 1
     },
 
-    {"id":"1","arrIdTer":[30712,30731],"selectedMean":[{"data":"po"},{"data":"po"}],"selectedHorizontal":[{"data":"w_date"},{"data":"w_date"}],"selectedColor":["#1dfd0d","#fd0d0d"],"gorizontalTitle":"w_date","verticalTitle":"po","selectedFirstDate":"2020-11-01 02:00:00","selectedEndDate":"2020-11-03 08:00:00","selectedTitle":"Давление Тест","typeGraph":2},
+    {
+      "id": "1",
+      "arrIdTer": [30712, 30731],
+      "selectedMean": [{ "data": "po" }, { "data": "po" }],
+      "selectedHorizontal": [{ "data": "w_date" }, { "data": "w_date" }],
+      "selectedColor": ["#1dfd0d", "#fd0d0d"],
+      "gorizontalTitle": "w_date",
+      "verticalTitle": "po",
+      "selectedFirstDate": "2020-11-01 02:00:00",
+      "selectedEndDate": "2020-11-03 08:00:00",
+      "selectedTitle": "Давление Тест",
+      "typeGraph": 2
+    },
 
+    {
+      "id": "2",
+      "arrIdTer": [30712, 30622, 30405],
+      "selectedMean": [{ "data": "t" }, { "data": "t" }, { "data": "t" }],
+      "selectedHorizontal": [
+        { "data": "w_date" },
+        { "data": "w_date" },
+        { "data": "w_date" }
+      ],
+      "selectedColor": ["#0d6efd", "#f96401", "#00ff1e"],
+      "gorizontalTitle": "Тест горизонтальный",
+      "verticalTitle": "Тест вертикальный",
+      "selectedFirstDate": "2020-11-01 02:00:00",
+      "selectedEndDate": "2020-11-03 17:00:00",
+      "selectedTitle": "Температура тест",
+      "typeGraph": 1
+    },
 
-    {"id":"2","arrIdTer":[30712,30622,30405],"selectedMean":[{"data":"t"},{"data":"t"},{"data":"t"}],"selectedHorizontal":[{"data":"w_date"},{"data":"w_date"},{"data":"w_date"}],"selectedColor":["#0d6efd","#f96401","#00ff1e"],"gorizontalTitle":"Тест горизонтальный","verticalTitle":"Тест вертикальный","selectedFirstDate":"2020-11-01 02:00:00","selectedEndDate":"2020-11-03 17:00:00","selectedTitle":"Температура тест","typeGraph":1},
+    {
+      "id": "3",
+      "arrIdTer": [30603, 30526, 29698],
+      "selectedMean": [{ "data": "ff" }, { "data": "ff" }, { "data": "ff" }],
+      "selectedHorizontal": [
+        { "data": "w_date" },
+        { "data": "w_date" },
+        { "data": "w_date" }
+      ],
+      "selectedColor": ["#0d6efd", "#102442", "#fd0d0d"],
+      "gorizontalTitle": "w_date",
+      "verticalTitle": "ff",
+      "selectedFirstDate": "2020-11-01 02:00:00",
+      "selectedEndDate": "2020-11-04 14:00:00",
+      "selectedTitle": "Test",
+      "typeGraph": 1
+    },
 
-    {"id":"3","arrIdTer":[30603,30526,29698],"selectedMean":[{"data":"ff"},{"data":"ff"},{"data":"ff"}],"selectedHorizontal":[{"data":"w_date"},{"data":"w_date"},{"data":"w_date"}],"selectedColor":["#0d6efd","#102442","#fd0d0d"],"gorizontalTitle":"w_date","verticalTitle":"ff","selectedFirstDate":"2020-11-01 02:00:00","selectedEndDate":"2020-11-04 14:00:00","selectedTitle":"Test","typeGraph":1}
-]}
+    {
+      "id": "30712t1670059072802",
+      "arrIdTer": [30712, 30815, 24817],
+      "selectedMean": [{ "data": "t" }, { "data": "t" }, { "data": "t" }],
+      "selectedHorizontal": [
+        { "data": "w_date" },
+        { "data": "w_date" },
+        { "data": "w_date" }
+      ],
+      "selectedColor": ["#e90c0c", "#0d6efd", "#22fa05"],
+      "gorizontalTitle": "w_date",
+      "verticalTitle": "t",
+      "selectedFirstDate": "2020-11-06 05:00:00",
+      "selectedEndDate": "2020-11-10 23:00:00",
+      "selectedTitle": "Температура",
+      "typeGraph": 1
+    },
+
+    {
+      "id": "30712po1670137596700",
+      "arrIdTer": [30712, 30824],
+      "selectedMean": [{ "data": "po" }, { "data": "po" }],
+      "selectedHorizontal": [{ "data": "w_date" }, { "data": "w_date" }],
+      "selectedColor": ["#0d6efd", "#0dfd1d"],
+      "gorizontalTitle": "ДАТА",
+      "verticalTitle": "ДАВЛЕНИЕ",
+      "selectedFirstDate": "2020-11-01 02:00:00",
+      "selectedEndDate": "2020-11-03 11:00:00",
+      "selectedTitle": "ДАВЛЕНИЕ 2",
+      "typeGraph": 1
+    }
+  ]
+}
